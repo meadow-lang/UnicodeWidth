@@ -1,7 +1,7 @@
 # unicodeWidth
 
 How many columns a character or a string takes up in a terminal, for
-[Meadow](https://github.com/mcdearman/meadow).
+[Meadow](https://github.com/meadow-lang/meadow).
 
 This is a port of Rust's [`unicode-width`](https://github.com/unicode-rs/unicode-width)
 0.2.2, covering Unicode 17.0.0. It follows
@@ -12,7 +12,7 @@ selectors, `\r\n`, Arabic lam-alef ligatures, and others.
 ## Install
 
 ```sh
-meadow add mcdearman/UnicodeWidth
+meadow add meadow-lang/UnicodeWidth
 ```
 
 ## Use
