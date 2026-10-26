@@ -264,8 +264,7 @@
 
 -- Code points that is a default-ignorable combining mark or ZWJ, which does not interrupt a
 -- non-Arabic ligature: `lo hi`, 4 digits each.
-@pub(pkg) def ligatureTransparent =
-  "00=?00=?01Nd01Ne01P;01P=01P?01P?020=020=0?h00?h?3P403P7_"
+@pub(pkg) def ligatureTransparent = "00=?00=?01Nd01Ne01P;01P=01P?01P?020=020=0?h00?h?3P403P7_"
 
 -- Code points that is zero-width but not Joining_Type=Transparent: `lo hi`, 4 digits each.
 @pub(pkg) def nonTransparentZeroWidths =
