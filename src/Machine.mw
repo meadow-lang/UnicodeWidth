@@ -79,30 +79,24 @@ fun isZwjEmojiPresentation info = bitAnd info 0xB000 == 0x9000
 -- The crate writes `info | VS16 & !VS15 & !VS1_2_3`, in which `&` binds
 -- tighter: the other selectors' bits are not cleared, and neither are they here.
 fun setEmojiPresentation info =
-  if has info ligatureTransparentMask or bitAnd info 0x9000 == 0x1000
-  then bitOr info variationSelector16
+  if has info ligatureTransparentMask or bitAnd info 0x9000 == 0x1000 then
+    bitOr info variationSelector16
   else variationSelector16
 
 fun unsetEmojiPresentation info =
-  if has info ligatureTransparentMask
-  then bitAnd info (bitNot variationSelector16)
-  else infoDefault
+  if has info ligatureTransparentMask then bitAnd info (bitNot variationSelector16) else infoDefault
 
 fun isTextPresentation info = has info variationSelector15
 
 fun setTextPresentation info =
-  if has info ligatureTransparentMask
-  then bitOr info variationSelector15
-  else variationSelector15
+  if has info ligatureTransparentMask then bitOr info variationSelector15 else variationSelector15
 
 fun unsetTextPresentation info = bitAnd info (bitNot variationSelector15)
 
 fun isVs123 info = has info variationSelector123
 
 fun setVs123 info =
-  if has info ligatureTransparentMask
-  then bitOr info variationSelector123
-  else variationSelector123
+  if has info ligatureTransparentMask then bitOr info variationSelector123 else variationSelector123
 
 fun unsetVs123 info = bitAnd info (bitNot variationSelector123)
 
@@ -153,161 +147,109 @@ fun isKeycapBase cp = between 0x30 0x39 cp or cp == 0x23 or cp == 0x2A
 
 fun lookup cjk cp = if cjk then lookupWidthCjk cp else lookupWidth cp
 
-fun widthOf pair =
-  match pair with
-  | (w, _) -> w
+fun widthOf pair = match pair with | (w, _) -> w
 
-fun infoOf pair =
-  match pair with
-  | (_, i) -> i
+fun infoOf pair = match pair with | (_, i) -> i
 
 -- --- the machine ----------------------------------------------------------------------
 
 -- The arms of the crate's `match (next_info, c)`, first match winning, and the
 -- plain lookup when none does.
 fun arms cjk cp info =
-  if cjk and info == combiningLongSolidusOverlay and isSolidusTransparent cp
-  then (widthOf (lookupWidthCjk cp), combiningLongSolidusOverlay)
-  else if cjk and info == joiningGroupAlef and cp == 0x338
-  then (0, solidusOverlayAlef)
-  else if (info == joiningGroupAlef or (cjk and info == solidusOverlayAlef)) and isLam cp
-  then (0, infoDefault)
-  else if info == joiningGroupAlef and isTransparentZeroWidth cp
-  then (0, joiningGroupAlef)
-  else if info == zwjHebrewLetterLamed and cp == 0x5D0
-  then (0, infoDefault)
-  else if info == khmerCoengEligibleLetter and cp == 0x17D2
-  then (0 - 1, infoDefault)
-  else if info == zwjBugineseLetterYa and cp == 0x1A17
-  then (0, bugineseVowelSignIZwjLetterYa)
-  else if info == bugineseVowelSignIZwjLetterYa and cp == 0x1A15
-  then (0, infoDefault)
-  else if (info == tifinaghConsonant or info == zwjTifinaghConsonant) and cp == 0x2D7F
-  then (1, tifinaghJoinerConsonant)
-  else if info == zwjTifinaghConsonant and isTifinaghLetter cp
-  then (0, infoDefault)
-  else if info == tifinaghJoinerConsonant and isTifinaghLetter cp
-  then (0 - 1, infoDefault)
-  else if info == lisuToneLetterMyaNaJeu and between 0xA4F8 0xA4FB cp
-  then (0, infoDefault)
-  else if info == zwjOldTurkicLetterOrkhonI and cp == 0x10C32
-  then (0, infoDefault)
-  else if info == emojiModifier and isEmojiModifierBase cp
-  then (0, emojiPresentation)
-  else if (info == regionalIndicator or info == severalRegionalIndicator) and isRegionalIndicator cp
-  then (1, severalRegionalIndicator)
-  else if cp == 0x200D and joinsEmoji info
-  then (0, zwjEmojiPresentation)
-  else if info == zwjEmojiPresentation and cp == 0x20E3
-  then (0, keycapZwjEmojiPresentation)
-  else if info == vs16ZwjEmojiPresentation and startsEmojiPresentationSeq cp
-  then (0, emojiPresentation)
-  else if info == vs16KeycapZwjEmojiPresentation and isKeycapBase cp
-  then (0, emojiPresentation)
-  else if info == zwjEmojiPresentation and isRegionalIndicator cp
-  then (1, regionalIndicatorZwjPresentation)
-  else if pairsRegionalIndicator info and isRegionalIndicator cp
-  then (0 - 1, evenRegionalIndicatorZwjPresentation)
-  else if info == evenRegionalIndicatorZwjPresentation and isRegionalIndicator cp
-  then (3, oddRegionalIndicatorZwjPresentation)
-  else if info == zwjEmojiPresentation and between 0x1F3FB 0x1F3FF cp
-  then (0, emojiModifier)
-  else if info == zwjEmojiPresentation and cp == 0xE007F
-  then (0, tagEnd)
-  else if info == tagEnd and isTagLetter cp
-  then (0, tagA1)
-  else if info == tagA1 and isTagLetter cp
-  then (0, tagA2)
-  else if info == tagA2 and isTagLetter cp
-  then (0, tagA3)
-  else if info == tagA3 and isTagLetter cp
-  then (0, tagA4)
-  else if info == tagA4 and isTagLetter cp
-  then (0, tagA5)
-  else if info == tagA5 and isTagLetter cp
-  then (0, tagA6)
-  else if isTagDigit cp and takesTagDigit info
-  then (0, tagD1)
-  else if info == tagD1 and isTagDigit cp
-  then (0, tagD2)
-  else if info == tagD2 and isTagDigit cp
-  then (0, tagD3)
-  else if cp == 0x1F3F4 and endsTagSequence info
-  then (0, emojiPresentation)
-  else if info == zwjEmojiPresentation and infoOf (lookup cjk cp) == emojiPresentation
-  then (0, emojiPresentation)
-  else if info == kiratRaiVowelSignE and cp == 0x16D63
-  then (0, infoDefault)
-  else if info == kiratRaiVowelSignE and cp == 0x16D67
-  then (0, kiratRaiVowelSignAi)
-  else if info == kiratRaiVowelSignE and cp == 0x16D68
-  then (1, kiratRaiVowelSignE)
-  else if info == kiratRaiVowelSignE and cp == 0x16D69
-  then (0, infoDefault)
-  else if info == kiratRaiVowelSignAi and cp == 0x16D63
-  then (0, infoDefault)
+  if cjk and info == combiningLongSolidusOverlay and isSolidusTransparent cp then
+    (widthOf (lookupWidthCjk cp), combiningLongSolidusOverlay)
+  else if cjk and info == joiningGroupAlef and cp == 0x338 then (0, solidusOverlayAlef)
+  else if (info == joiningGroupAlef or (cjk and info == solidusOverlayAlef)) and isLam cp then
+    (0, infoDefault)
+  else if info == joiningGroupAlef and isTransparentZeroWidth cp then (0, joiningGroupAlef)
+  else if info == zwjHebrewLetterLamed and cp == 0x5D0 then (0, infoDefault)
+  else if info == khmerCoengEligibleLetter and cp == 0x17D2 then (0 - 1, infoDefault)
+  else if info == zwjBugineseLetterYa and cp == 0x1A17 then (0, bugineseVowelSignIZwjLetterYa)
+  else if info == bugineseVowelSignIZwjLetterYa and cp == 0x1A15 then (0, infoDefault)
+  else if (info == tifinaghConsonant or info == zwjTifinaghConsonant) and cp == 0x2D7F then
+    (1, tifinaghJoinerConsonant)
+  else if info == zwjTifinaghConsonant and isTifinaghLetter cp then (0, infoDefault)
+  else if info == tifinaghJoinerConsonant and isTifinaghLetter cp then (0 - 1, infoDefault)
+  else if info == lisuToneLetterMyaNaJeu and between 0xA4F8 0xA4FB cp then (0, infoDefault)
+  else if info == zwjOldTurkicLetterOrkhonI and cp == 0x10C32 then (0, infoDefault)
+  else if info == emojiModifier and isEmojiModifierBase cp then (0, emojiPresentation)
+  else if (info == regionalIndicator or info == severalRegionalIndicator)
+    and isRegionalIndicator cp then (1, severalRegionalIndicator)
+  else if cp == 0x200D and joinsEmoji info then (0, zwjEmojiPresentation)
+  else if info == zwjEmojiPresentation and cp == 0x20E3 then (0, keycapZwjEmojiPresentation)
+  else if info == vs16ZwjEmojiPresentation and startsEmojiPresentationSeq cp then
+    (0, emojiPresentation)
+  else if info == vs16KeycapZwjEmojiPresentation and isKeycapBase cp then (0, emojiPresentation)
+  else if info == zwjEmojiPresentation and isRegionalIndicator cp then
+    (1, regionalIndicatorZwjPresentation)
+  else if pairsRegionalIndicator info and isRegionalIndicator cp then
+    (0 - 1, evenRegionalIndicatorZwjPresentation)
+  else if info == evenRegionalIndicatorZwjPresentation and isRegionalIndicator cp then
+    (3, oddRegionalIndicatorZwjPresentation)
+  else if info == zwjEmojiPresentation and between 0x1F3FB 0x1F3FF cp then (0, emojiModifier)
+  else if info == zwjEmojiPresentation and cp == 0xE007F then (0, tagEnd)
+  else if info == tagEnd and isTagLetter cp then (0, tagA1)
+  else if info == tagA1 and isTagLetter cp then (0, tagA2)
+  else if info == tagA2 and isTagLetter cp then (0, tagA3)
+  else if info == tagA3 and isTagLetter cp then (0, tagA4)
+  else if info == tagA4 and isTagLetter cp then (0, tagA5)
+  else if info == tagA5 and isTagLetter cp then (0, tagA6)
+  else if isTagDigit cp and takesTagDigit info then (0, tagD1)
+  else if info == tagD1 and isTagDigit cp then (0, tagD2)
+  else if info == tagD2 and isTagDigit cp then (0, tagD3)
+  else if cp == 0x1F3F4 and endsTagSequence info then (0, emojiPresentation)
+  else if info == zwjEmojiPresentation and infoOf (lookup cjk cp) == emojiPresentation then
+    (0, emojiPresentation)
+  else if info == kiratRaiVowelSignE and cp == 0x16D63 then (0, infoDefault)
+  else if info == kiratRaiVowelSignE and cp == 0x16D67 then (0, kiratRaiVowelSignAi)
+  else if info == kiratRaiVowelSignE and cp == 0x16D68 then (1, kiratRaiVowelSignE)
+  else if info == kiratRaiVowelSignE and cp == 0x16D69 then (0, infoDefault)
+  else if info == kiratRaiVowelSignAi and cp == 0x16D63 then (0, infoDefault)
   else lookup cjk cp
 
 -- Characters that do not interrupt a ligature pass the state through.
 fun ligature cjk cp info =
-  if infoIsLigatureTransparent info and cp == 0x200D
-  then (0, setZwjBit info)
-  else if infoIsLigatureTransparent info and isLigatureTransparent cp
-  then (0, info)
+  if infoIsLigatureTransparent info and cp == 0x200D then (0, setZwjBit info)
+  else if infoIsLigatureTransparent info and isLigatureTransparent cp then (0, info)
   else arms cjk cp info
 
 -- A character that a variation selector follows. Text presentation (U+FE0E)
 -- exists only outside East Asian contexts, where no state ever carries it.
 fun selected cjk cp info =
-  if not cjk and isTextPresentation info
-  then
-    if startsTextPresentationSeq cp
-    then (1, infoDefault)
+  if not cjk and isTextPresentation info then
+    if startsTextPresentationSeq cp then (1, infoDefault)
     else ligature cjk cp (unsetTextPresentation info)
-  else if isVs123 info
-  then
-    if isQuote cp
-    then ((if cjk then 1 else 2), infoDefault)
-    else ligature cjk cp (unsetVs123 info)
+  else if isVs123 info then
+    if isQuote cp then ((if cjk then 1 else 2), infoDefault) else ligature cjk cp (unsetVs123 info)
   else ligature cjk cp info
 
 -- A character above U+00A0, when something after it has left a state.
 fun inSequence cjk cp info =
-  if cp == 0xFE0F
-  then (0, setEmojiPresentation info)
-  else if (if cjk then cp == 0xFE00 or cp == 0xFE02 else cp == 0xFE01)
-  then (0, setVs123 info)
-  else if not cjk and cp == 0xFE0E
-  then (0, setTextPresentation info)
+  if cp == 0xFE0F then (0, setEmojiPresentation info)
+  else if (if cjk then cp == 0xFE00 or cp == 0xFE02 else cp == 0xFE01) then (0, setVs123 info)
+  else if not cjk and cp == 0xFE0E then (0, setTextPresentation info)
   else selected cjk cp info
 
 -- What `cp` adds to the width of a string, given `next`, what the characters
 -- after it left; and what it leaves for the character before it.
 fun afterEmoji cjk cp info =
-  if cjk and overlaysSolidus info and (cp == 0x3C or cp == 0x3D or cp == 0x3E)
-  then (2, infoDefault)
-  else if cp <= 0xA0
-  then
-    if cp == 0x0A
-    then (1, lineFeed)
-    else if cp == 0x0D and info == lineFeed
-    then (0, infoDefault)
+  if cjk and overlaysSolidus info and (cp == 0x3C or cp == 0x3D or cp == 0x3E) then (2, infoDefault)
+  else if cp <= 0xA0 then
+    if cp == 0x0A then (1, lineFeed)
+    else if cp == 0x0D and info == lineFeed then (0, infoDefault)
     else (1, infoDefault)
-  else if info == infoDefault
-  then lookup cjk cp
+  else if info == infoDefault then lookup cjk cp
   else inSequence cjk cp info
 
 fun step cjk cp next =
-  if infoIsEmojiPresentation next
-  then
-    if startsEmojiPresentationSeq cp
-    then ((if isZwjEmojiPresentation next then 0 else 2), emojiPresentation)
+  if infoIsEmojiPresentation next then
+    if startsEmojiPresentationSeq cp then
+      ((if isZwjEmojiPresentation next then 0 else 2), emojiPresentation)
     else afterEmoji cjk cp (unsetEmojiPresentation next)
   else afterEmoji cjk cp next
 
 fun widthFrom cjk chars i sum next =
-  if i < 0
-  then sum
+  if i < 0 then sum
   else
     match step cjk (charCode (arrayGet chars i)) next with
     | (add, info) -> widthFrom cjk chars (i - 1) (sum + add) info

@@ -62,8 +62,7 @@ fun trie root cp =
 -- last arm, a wide emoji -- is never taken.
 fun special table cp =
   let at = search table 12 cp in
-  if at < 0
-  then (2, 5)
+  if at < 0 then (2, 5)
   else (digit table (at + 8), byte table (at + 9) * 64 + digit table (at + 11))
 
 -- The width of the code point `cp` on its own, with the information the state
@@ -100,5 +99,4 @@ fun special table cp =
   | _ -> False
 
 -- Whether `cp` leaves U+0338 COMBINING LONG SOLIDUS OVERLAY acting on its base.
-@pub(pkg) fun isSolidusTransparent cp =
-  isLigatureTransparent cp or inRanges solidusTransparent cp
+@pub(pkg) fun isSolidusTransparent cp = isLigatureTransparent cp or inRanges solidusTransparent cp

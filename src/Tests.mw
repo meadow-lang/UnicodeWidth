@@ -22,8 +22,7 @@ fun field s i n = if n == 0 then 0 else field s i (n - 1) * 64 + digit s (i + n 
 -- The failures among the string cases from byte `at`, most recent first.
 @cfg(test)
 fun checkStrings at bad =
-  if at >= stringByteLength strCases
-  then bad
+  if at >= stringByteLength strCases then bad
   else
     let len = field strCases (at + 4) 3 in
     let s = stringSlice strCases (at + 7) (at + 7 + len) in
@@ -37,8 +36,7 @@ fun decodeWidth n = if n == 0 then None else Just (n - 1)
 
 @cfg(test)
 fun checkChars at bad =
-  if at >= stringByteLength charCases
-  then bad
+  if at >= stringByteLength charCases then bad
   else
     let c = charFromCode (field charCases at 4) in
     let narrow = decodeWidth (digit charCases (at + 4)) in

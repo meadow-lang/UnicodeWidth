@@ -5,16 +5,12 @@ use UnicodeWidth.Tables as T
 use UnicodeWidth.Lookup (lookupWidth, lookupWidthCjk)
 use UnicodeWidth.Machine (strWidth)
 
-fun first pair =
-  match pair with
-  | (w, _) -> w
+fun first pair = match pair with | (w, _) -> w
 
 fun single lookup c =
   let cp = charCode c in
-  if cp < 0x7F
-  then (if cp >= 0x20 then Just 1 else None)
-  else if cp >= 0xA0
-  then Just (first (lookup cp))
+  if cp < 0x7F then (if cp >= 0x20 then Just 1 else None)
+  else if cp >= 0xA0 then Just (first (lookup cp))
   else None
 
 -- The columns `c` takes on its own, or `None` for a control character.
